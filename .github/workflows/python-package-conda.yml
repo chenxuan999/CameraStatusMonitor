@@ -16,32 +16,59 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Add conda to system pathAdd commentMore actions
+
+    # 安装 Miniconda
+    - name: Setup Miniconda
+      shell: powershell
       run: |
-        echo "${CONDA}\bin" >> $GITHUB_PATH
-        echo "${CONDA}\\bin" >> $GITHUB_PATH
+        # 下载 Miniconda 安装器
+        $minicondaInstaller = "Miniconda3-latest-Windows-x86_64.exe"
+        Invoke-WebRequest "https://repo.anaconda.com/miniconda/$minicondaInstaller" -OutFile "$minicondaInstaller"
+        
+        # 安装 Miniconda 到当前用户的目录
+        $installDir = "$env:USERPROFILE\miniconda3"
+        Start-Process -FilePath ".\$minicondaInstaller" -ArgumentList "/S", "/D=$installDir" -Wait
+        
+        # 添加 Miniconda 到 PATH
+        $env:PATH = "$installDir;$installDir\Scripts;$installDir\Library\bin;$env:PATH"
+        [System.Environment]::SetEnvironmentVariable("PATH", $env:PATH, [System.EnvironmentVariableTarget]::User)
+        
+        # 初始化 Conda
+        & "$installDir\Scripts\conda" init powershell
+        & "$installDir\Scripts\conda" init bash
+        
+        # 验证 Conda 是否可用
+        & conda --version
+
+    # 安装依赖
     - name: Install dependencies
+      shell: powershell
       run: |
         conda env update --file environment.yml --name base
+
+    # 创建 Conda 环境
     - name: Create conda environment
-      shell: cmd
+      shell: powershell
       run: |
-        conda create -n testenv python=${{ matrix.python-version }}
+        conda create -n testenv python=${{ matrix.python-version }} --yes
         conda activate testenv
         conda env update --file environment.yml --name testenv
+
+    # 使用 flake8 进行代码检查
     - name: Lint with flake8
-      shell: cmd
+      shell: powershell
       run: |
-        conda install -n testenv flake8
+        conda install -n testenv flake8 --yes
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    # 构建包
     - name: Build package
+      shell: powershell
       run: |
         python setup.py sdist bdist_wheel
+
+    # 上传构建的包
     - name: Upload package
       uses: actions/upload-artifact@v4
       with:
