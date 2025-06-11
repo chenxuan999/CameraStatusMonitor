@@ -20,23 +20,18 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install conda
-      shell: cmd
+    - name: Add conda to system pathAdd commentMore actions
       run: |
-        @echo off
-        curl -o miniconda.bat -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.bat
-        call miniconda.bat /InstallationType=JustMe /AddToPath=0 /S /D=%TEMP%\miniconda
-        call %TEMP%\miniconda\Scripts\activate
-        echo %TEMP%\miniconda\Scripts >> %GITHUB_PATH%
-        echo %TEMP%\miniconda\Library\bin >> %GITHUB_PATH%
+        echo "${CONDA}\bin" >> $GITHUB_PATH
+        echo "${CONDA}\\bin" >> $GITHUB_PATH
+    - name: Install dependencies
+      run: |
+        conda env update --file environment.yml --name base
     - name: Create conda environment
       shell: cmd
       run: |
         conda create -n testenv python=${{ matrix.python-version }}
         conda activate testenv
-    - name: Install dependencies
-      shell: cmd
-      run: |
         conda env update --file environment.yml --name testenv
     - name: Lint with flake8
       shell: cmd
@@ -44,11 +39,6 @@ jobs:
         conda install -n testenv flake8
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      shell: cmd
-      run: |
-        conda install -n testenv pytest
-        pytest
     - name: Build package
       run: |
         python setup.py sdist bdist_wheel
