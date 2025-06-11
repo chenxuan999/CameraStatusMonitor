@@ -42,7 +42,7 @@ jobs:
       run: |
         python setup.py sdist bdist_wheel
     - name: Upload package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # 更新为v4
       with:
         name: package
         path: dist/
@@ -82,7 +82,7 @@ jobs:
       run: |
         python setup.py sdist bdist_wheel
     - name: Upload package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # 更新为v4
       with:
         name: package
         path: dist/
@@ -122,7 +122,7 @@ jobs:
       run: |
         python setup.py sdist bdist_wheel
     - name: Upload package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # 更新为v4
       with:
         name: package
         path: dist/
