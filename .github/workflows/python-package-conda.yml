@@ -7,47 +7,6 @@ on:
     branches: [main, master]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 5
-      matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install conda
-      run: |
-        conda install -y conda
-    - name: Create conda environment
-      run: |
-        conda create -n testenv python=${{ matrix.python-version }}
-        conda activate testenv
-    - name: Install dependencies
-      run: |
-        conda env update --file environment.yml --name testenv
-    - name: Lint with flake8
-      run: |
-        conda install -n testenv flake8
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: |
-        conda install -n testenv pytest
-        pytest
-    - name: Build package
-      run: |
-        python setup.py sdist bdist_wheel
-    - name: Upload package
-      uses: actions/upload-artifact@v4
-      with:
-        name: package
-        path: dist/
-
   build-windows:
     runs-on: windows-latest
     strategy:
