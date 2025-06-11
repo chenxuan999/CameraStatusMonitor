@@ -20,57 +20,24 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Add conda to system path
+    - name: Install conda
       run: |
-        echo "${CONDA}/bin" >> $GITHUB_PATH
+        conda install -y conda
+    - name: Create conda environment
+      run: |
+        conda create -n testenv python=${{ matrix.python-version }}
+        conda activate testenv
     - name: Install dependencies
       run: |
-        conda env update --file environment.yml --name base
+        conda env update --file environment.yml --name testenv
     - name: Lint with flake8
       run: |
-        conda install flake8
+        conda install -n testenv flake8
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        conda install pytest
-        pytest
-    - name: Build package
-      run: |
-        python setup.py sdist bdist_wheel
-    - name: Upload package
-      uses: actions/upload-artifact@v4
-      with:
-        name: package
-        path: dist/
-
-  build-macos:
-    runs-on: macos-latest
-    strategy:
-      max-parallel: 5
-      matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Add conda to system path
-      run: |
-        echo "${CONDA}/bin" >> $GITHUB_PATH
-    - name: Install dependencies
-      run: |
-        conda env update --file environment.yml --name base
-    - name: Lint with flake8
-      run: |
-        conda install flake8
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: |
-        conda install pytest
+        conda install -n testenv pytest
         pytest
     - name: Build package
       run: |
@@ -94,20 +61,34 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Add conda to system path
+    - name: Install conda
+      shell: cmd
       run: |
-        echo "${CONDA}\\bin" >> $GITHUB_PATH
+        @echo off
+        curl -o miniconda.bat -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.bat
+        call miniconda.bat /InstallationType=JustMe /AddToPath=0 /S /D=%TEMP%\miniconda
+        call %TEMP%\miniconda\Scripts\activate
+        echo %TEMP%\miniconda\Scripts >> %GITHUB_PATH%
+        echo %TEMP%\miniconda\Library\bin >> %GITHUB_PATH%
+    - name: Create conda environment
+      shell: cmd
+      run: |
+        conda create -n testenv python=${{ matrix.python-version }}
+        conda activate testenv
     - name: Install dependencies
+      shell: cmd
       run: |
-        conda env update --file environment.yml --name base
+        conda env update --file environment.yml --name testenv
     - name: Lint with flake8
+      shell: cmd
       run: |
-        conda install flake8
+        conda install -n testenv flake8
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
+      shell: cmd
       run: |
-        conda install pytest
+        conda install -n testenv pytest
         pytest
     - name: Build package
       run: |
