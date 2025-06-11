@@ -1,0 +1,11 @@
+name: camera-status-monitor
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pillow
+  - pyinstaller
+  - tk
+  - pygetwindow
+  - pywinctl
