@@ -21,24 +21,22 @@ jobs:
     - name: Setup Miniconda
       shell: powershell
       run: |
-        # 下载 Miniconda 安装器
         $minicondaInstaller = "Miniconda3-latest-Windows-x86_64.exe"
         Invoke-WebRequest "https://repo.anaconda.com/miniconda/$minicondaInstaller" -OutFile "$minicondaInstaller"
-        
-        # 安装 Miniconda 到当前用户的目录
         $installDir = "$env:USERPROFILE\miniconda3"
         Start-Process -FilePath ".\$minicondaInstaller" -ArgumentList "/S", "/D=$installDir" -Wait
-        
-        # 添加 Miniconda 到 PATH
         $env:PATH = "$installDir;$installDir\Scripts;$installDir\Library\bin;$env:PATH"
         [System.Environment]::SetEnvironmentVariable("PATH", $env:PATH, [System.EnvironmentVariableTarget]::User)
-        
-        # 初始化 Conda
         & "$installDir\Scripts\conda" init powershell
         & "$installDir\Scripts\conda" init bash
-        
-        # 验证 Conda 是否可用
         & conda --version
+
+    # 配置镜像源
+    - name: Setup Conda Mirror
+      shell: powershell
+      run: |
+        conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
+        conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
 
     # 安装依赖
     - name: Install dependencies
@@ -54,11 +52,22 @@ jobs:
         conda activate testenv
         conda env update --file environment.yml --name testenv
 
-    # 使用 flake8 进行代码检查
+    # 清理环境
+    - name: Clean Conda Environment
+      shell: powershell
+      run: |
+        conda clean --all --yes
+
+    # 安装 flake8
+    - name: Install flake8
+      shell: powershell
+      run: |
+        conda install -n testenv flake8 requests=2.28.2 --yes
+
+    # 运行 flake8
     - name: Lint with flake8
       shell: powershell
       run: |
-        conda install -n testenv flake8 --yes
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
@@ -68,7 +77,7 @@ jobs:
       run: |
         python setup.py sdist bdist_wheel
 
-    # 上传构建的包
+    # 上传包
     - name: Upload package
       uses: actions/upload-artifact@v4
       with:
